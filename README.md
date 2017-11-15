@@ -1,4 +1,4 @@
-# gonotify-perf-test
+# gonotify-perftest
 
 Perf test for gonotify service deployed at gonotify.herokuapp.com
 
