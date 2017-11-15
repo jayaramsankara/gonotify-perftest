@@ -24,12 +24,11 @@ class GoNotifyWSTest extends Simulation {
    * http protocol to be used for performance test
    */
   val httpAndWSConf = http
-    .baseURL("https://gonotify.de-ams.thunderhead.io")
+    .baseURL("https://gonotify.herokuapp.com")
     .doNotTrackHeader("1")
     .acceptLanguageHeader("en-US,en;q=0.5")
     .acceptEncodingHeader("gzip, deflate")
-    .userAgentHeader("Mozilla/5.0 (Windows NT 5.1; rv:31.0) Gecko/20100101 Firefox/31.0")
-    .wsBaseURL("wss://gonotify.de-ams.thunderhead.io")
+    .wsBaseURL("wss://gonotify.herokuapp.com")
     .shareConnections
 
   /**
