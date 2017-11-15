@@ -1,2 +1,2 @@
-# gonotify-perftest
-Load Test for gonotify using Gatling
+# gonotify-perf-test
+Perf test for gonotify

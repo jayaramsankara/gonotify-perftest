@@ -1,0 +1,82 @@
+package com.jayas.gonotify.gattest
+
+import java.util.UUID
+
+import scala.util.Properties._
+
+import io.gatling.core.Predef._
+import io.gatling.http.Predef._
+import io.gatling.http.config.HttpProtocolBuilder.toHttpProtocol
+import io.gatling.http.request.builder.HttpRequestBuilder.toActionBuilder
+
+import scala.concurrent.duration.DurationInt
+
+/**
+ * Performance tests the websocket notification feature of gonotify
+ */
+class GoNotifyWSTest extends Simulation {
+
+ val maxUsers = envOrPropOrElse("maxUsers", "200").toInt
+ val testDuration = envOrPropOrElse("testDuration", "30").toInt
+ val userRampupDuration = envOrPropOrElse("userRampupDuration", "10").toInt
+ 
+  /**
+   * http protocol to be used for performance test
+   */
+  val httpAndWSConf = http
+    .baseURL("https://gonotify.de-ams.thunderhead.io")
+    .doNotTrackHeader("1")
+    .acceptLanguageHeader("en-US,en;q=0.5")
+    .acceptEncodingHeader("gzip, deflate")
+    .userAgentHeader("Mozilla/5.0 (Windows NT 5.1; rv:31.0) Gecko/20100101 Firefox/31.0")
+    .wsBaseURL("wss://gonotify.de-ams.thunderhead.io")
+    .shareConnections
+
+  /**
+   * data feeder for performance test (each scenario will be fed by this feeder)
+   */
+  val feeder = new Feeder[String] {
+
+    // always return true as this feeder can be polled infinitively
+    override def hasNext: Boolean = true
+    var counter : Long = 0
+
+    override def next: Map[String, String] = {
+     counter = counter +1
+      Map("clientId" -> UUID.randomUUID().toString,
+          "counter" -> counter.toString)
+
+    }
+  }
+
+  def notifyMsg = "This is test message # ${counter}"
+  val bodyForNotifyMsg = StringBody("{\"message\": \""+notifyMsg+"\"}".stripMargin)
+  
+  val regAndListenWebSocket = exec(ws("reg_listen_ws_client")
+    .open("/ws/${clientId}").check(wsListen.within(10 seconds).until(1).regex(notifyMsg)))
+  
+  val notifyMessage = exec(http("notify_msg")
+    .post("/notify/${clientId}")
+    .body(bodyForNotifyMsg).asJSON)
+  
+  
+ 
+  
+
+  val reqs = regAndListenWebSocket.pause(1 seconds).exec(notifyMessage).pause(10 seconds)
+
+  
+  val scn = scenario("gonotify Load Test").during(testDuration,"",false) {
+    feed(feeder).exec(reqs).exec(ws("Close WS").close)
+  }
+
+  /**
+   * Starts performance test
+   */
+  setUp(scn.inject(rampUsers(maxUsers) over (userRampupDuration)).protocols(httpAndWSConf))
+  
+  def envOrPropOrElse(key : String, default: String) : String = {
+    envOrElse(key, propOrElse(key, default))
+  }
+
+}
