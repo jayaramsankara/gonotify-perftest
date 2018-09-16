@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="log2file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>gonotify-perftest.log</file>
+        <append>true</append>
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>ccx-ld-load_%i.log.zip</fileNamePattern>
+            <minIndex>1</minIndex>
+            <maxIndex>25</maxIndex>
+        </rollingPolicy>
+
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>30MB</maxFileSize>
+        </triggeringPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.excilys.ebi.gatling.http.ahc.GatlingAsyncHandler" level="WARN" additivity="false"/>
+    <logger name="io.gatling.http.ahc" level="WARN"/>
+    <logger name="io.gatling.http.response" level="WARN"/>
+    <logger name="io.gatling.core.action.Pause" level="WARN"/>
+
+    <root level="WARN">
+        <appender-ref ref="log2file"/>
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+</configuration>

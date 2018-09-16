@@ -11,4 +11,3 @@ libraryDependencies ++= Seq(
   "io.gatling"            % "gatling-test-framework"    % "2.1.5" ,
   "io.gatling"            % "gatling-bundle"            % "2.1.5"  artifacts (Artifact("gatling-bundle", "zip", "zip", "bundle"))
 )
-

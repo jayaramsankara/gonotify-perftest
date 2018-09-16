@@ -16,9 +16,10 @@ import scala.concurrent.duration.DurationInt
  */
 class GoNotifyWSTest extends Simulation {
 
- val maxUsers = envOrPropOrElse("maxUsers", "200").toInt
- val testDuration = envOrPropOrElse("testDuration", "30").toInt
- val userRampupDuration = envOrPropOrElse("userRampupDuration", "10").toInt
+ val maxUsers = envOrPropOrElse("maxUsers", "600").toInt
+ val testDuration = envOrPropOrElse("testDuration", "60").toInt
+ val messagingInterval = envOrPropOrElse("messagingInterval", "10").toInt
+ val userRampupDuration = envOrPropOrElse("userRampupDuration", "30").toInt
  
   /**
    * http protocol to be used for performance test
@@ -47,27 +48,35 @@ class GoNotifyWSTest extends Simulation {
 
     }
   }
-
+ 
+ 
   def notifyMsg = "This is test message # ${counter}"
   val bodyForNotifyMsg = StringBody("{\"message\": \""+notifyMsg+"\"}".stripMargin)
   
-  val regAndListenWebSocket = exec(ws("reg_listen_ws_client")
-    .open("/ws/${clientId}").check(wsListen.within(10 seconds).until(1).regex(notifyMsg)))
+  val openWebSocket = exec(ws("reg_listen_ws_client")
+    .open("/ws/${clientId}"))
   
   val notifyMessage = exec(http("notify_msg")
     .post("/notify/${clientId}")
     .body(bodyForNotifyMsg).asJSON)
-  
-  
- 
-  
+    .pause(1 seconds)
 
-  val reqs = regAndListenWebSocket.pause(1 seconds).exec(notifyMessage).pause(10 seconds)
+  def listenForMessage(listenDuration: Int, numOfMessages: Int) = ws("Listen For Messages")
+    .check(wsListen.within(listenDuration).expect(numOfMessages)
+      .regex(notifyMsg))
 
+  val scn = scenario("gonotify Load Test ")
+    .feed(feeder)
+    .exec(openWebSocket)
+
+    .during(testDuration, "", false) {
+      exec(listenForMessage(messagingInterval, 1))
+        .exec(notifyMessage)
+        .pause(messagingInterval seconds)
+
+    }
+    .exec(ws("Close WS").close)
   
-  val scn = scenario("gonotify Load Test").during(testDuration,"",false) {
-    feed(feeder).exec(reqs).exec(ws("Close WS").close)
-  }
 
   /**
    * Starts performance test
